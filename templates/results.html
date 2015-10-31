@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<style>
+    html {
+        background-image: url("static/images/maxresdefault.jpg");
+    }
+    #resultsWrapper {
+      width: 35em;
+      height: 20em;
+      display: inline-block;
+      vertical-align: top;
+      float: left;
+    }
+    #results {
+      width: 35em;
+      height: 15em;
+      border: 1px solid #c6c7cc;
+    }
+    #padd {
+      width: 20em;
+      height: 20em;
+      float: left;
+      display: inline-block;
+    }
+    #headers {
+      height: 5em;
+      clear: both; 
+      display: block;
+    }
+    a {
+      left: 10px;
+      padding: 2px;
+      margin: 2px;
+      margin-left: 10px;
+    }
+    a:link {
+      color: white;
+    }
+    a:hover {
+      color: hotpink;
+    }
+    a:visited {
+      color: green;
+    }
+    .node {
+      stroke: #fff;
+      stroke-width: 1.5px;
+    }
+
+    .link {
+      stroke: #999;
+      stroke-opacity: .6;
+    }
+    h1, h2 {
+      color: white;
+    }
+
+
+</style>
+</head>
+
+<body>
+<div id="headers">
+    <h1 style="float: left">Search Results</h1>
+    <h2 style="float: right">Random Graph of recipes with similar ingredients!</h2>
+</div>
+<hr />
+<div id="resultsWrapper">
+  <div id="results">
+  </div>
+  <input type="button" onclick="location.href='/';" value="Search Again" />
+</div>
+<div id="padd"></div>
+<script>
+var food_tree = {};
+var foods = [];
+var links = [];
+var tempLinks = {};
+var ing_tree = {};
+
+{% if jsonData %}
+  var json = JSON.parse({{ jsonData|safe }});
+  scrapeJson(json);
+{% endif %}
+
+function scrapeJson(obj) {
+  console.log(obj);
+  console.log(obj.hits.length);
+  var theDiv = document.getElementById("results");
+  var query = obj.q.split(",");
+  
+  for (var i = 0; i < obj.hits.length; i++) {
+    var num_ingred = obj.hits[i].recipe.ingredients.length;
+    var recipe = obj.hits[i].recipe.label;
+    food_tree[recipe] = [];
+    foods.push({ "name" : obj.hits[i].recipe.label, "group" : i + 1});
+    console.log(obj.hits[i].recipe.label);
+    for (var j = 0; j < num_ingred; j++) {
+        var food = obj.hits[i].recipe.ingredients[j].food;
+        var addIt = true;
+        for (var n = 0; n < query.length; n++) {
+          if (food.toUpperCase() == query[n].toUpperCase() ||
+            food.toUpperCase() == query[n].toUpperCase().slice(0, query[n].length-1) ||
+            food.toUpperCase().slice(0, food.length-1) == query[n].toUpperCase()) {
+            addIt = false;
+            break;
+          }
+        }
+        if (addIt) {
+          if (ing_tree[food] == undefined) {
+            ing_tree[food] = [];
+          } 
+            ing_tree[food].push(recipe);
+          food_tree[recipe].push(food);
+        }
+    }
+    var a = document.createElement('a');
+    var content = document.createTextNode(obj.hits[i].recipe.label);
+    a.href = obj.hits[i].recipe.url;
+    a.appendChild(content);
+    theDiv.appendChild(a);
+    theDiv.innerHTML += "<br>";
+  }
+  console.log(food_tree);
+  console.log(ing_tree);
+  for (var key in ing_tree) {
+    if (ing_tree.hasOwnProperty(key)) {
+      if (ing_tree[key].length <= 1) {
+        continue;
+      }
+      var fList = ing_tree[key];   
+      for (var f = 0; f < ing_tree[key].length; f++) {
+        for (var h = f+1; h < ing_tree[key].length; h++) {
+          if (fList[f] == fList[h]) {
+            continue;
+          }
+          if (tempLinks[fList[f]+"|"+fList[h]] == undefined) {
+            tempLinks[fList[f]+"|"+fList[h]] = 1;
+          }
+          tempLinks[fList[f]+"|"+fList[h]] += 1;
+        }
+      }
+    
+    }
+    console.log(tempLinks);
+  }
+  setUpLinks();
+}
+
+function setUpLinks() {
+  for (var key in tempLinks) {
+    if (tempLinks.hasOwnProperty(key)) {
+      console.log(key);
+      var nodes = key.split("|");
+      links.push({"source":indexOfObjArr(nodes[0], foods),"target":indexOfObjArr(nodes[1], foods),"value":tempLinks[key]});
+    }
+  }
+  console.log(links);
+  runGraph();
+}
+
+function indexOfObjArr(str, objArr) {
+  for (var i = 0; i < objArr.length; i++) {
+    if (str == objArr[i]["name"]) {
+      return i;
+    }
+  }
+}
+
+function runGraph() {
+  var width = 300,
+      height = 300;
+
+  var color = d3.scale.category20();
+
+  var force = d3.layout.force()
+      .charge(-120)
+      .linkDistance(75)
+      .size([width, height]);
+
+  var svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+  force
+      .nodes(foods)
+      .links(links)
+      .start();
+
+  var link = svg.selectAll(".link")
+      .data(links)
+      .enter().append("line")
+      .attr("class", "link")
+      .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+  var node = svg.selectAll(".node")
+      .data(foods)
+      .enter().append("circle")
+      .attr("class", "node")
+      .attr("r", 5)
+      .style("fill", function(d) { return color(d.group); })
+      .call(force.drag);
+
+  node.append("title")
+      .text(function(d) { return d.name; });
+
+  force.on("tick", function() {
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("cx", function(d) { return d.x; })
+        .attr("cy", function(d) { return d.y; });
+  });
+}
+
+
+</script>
+</body>
+</html>

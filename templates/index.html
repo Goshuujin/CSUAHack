@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    html {
+        /*height: 100%;
+        width: 100%;*/
+        background-image: url("static/images/maxresdefault.jpg");
+    }
+    #theForm {
+      position: relative;
+      border: 1px solid #c6c7cc;
+      border-radius: 5px;
+      font: 14px/1.4 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      width: 240px;
+      left: 42%;
+      right: 35%;
+
+    }
+    h1, h3 {
+      position: relative;
+      text-align: center;
+      color: white;
+    }
+
+</style>
+</head>
+
+<body>
+<h1><b><u>Brok Studnt</u></b></h1><br>
+<h3>Find something to cook!</h3>
+<!-- <div id="main"> -->
+  <form id="theForm" action="/handle_form" method="POST">
+    <fieldset>
+      <legend>Enter Ingredients</legend>
+      <input type="text" name="a" value="Chicken"><br><br>
+      <input type="text" name="b" value=""><br><br>
+      <input type="text" name="c" value=""><br><br>
+      <input type="text" name="d" value=""><br><br><br>
+      <input type="submit" value="Submit">
+    </fieldset>
+  </form>
+<!-- </div> -->
+
+</body>
+</html>

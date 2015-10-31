@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    #main {
+        height: 100%;
+        width: 100%;
+        background-image: url("static/images/maxresdefault.jpg");
+    }
+
+
+</style>
+</head>
+
+<body>
+
+<div id="main">
+  
+</div>
+
+
+<script>
+var json = JSON.parse({{ jsonData }})
+if json {
+  scrapeJson(json);
+} else {
+  console.log("No json to parse!");
+}
+
+function scrapeJson(obj) {
+  for (var i = 0; i < obj.hits.length; i++) {
+    var num_ingred = obj.hits[i].recipe.ingredients.length;
+    food_tree[obj.hits[i].recipe.label] = [];
+    for (var j = 0; j < num_ingred; j++) {
+        food_tree[obj.hits[i].recipe.label].push(obj.hits[i].recipe.ingredients[j].food);
+    }
+  }
+  console.log(food_tree);
+}
+//var url = "https://api.edamam.com/search?q=chicken&app_id=a8c883e0&app_key=2e7eb13027fc74be1b6e9b022e53c207"
+// var food_tree = {};
+// function reqListener () {
+//   console.log(this.responseText);
+//   var obj = JSON.parse(this.responseText);
+//   for (var i = 0; i < obj.hits.length; i++) {
+//     var num_ingred = obj.hits[i].recipe.ingredients.length;
+//     food_tree[obj.hits[i].recipe.label] = [];
+//     for (var j = 0; j < num_ingred; j++) {
+//         food_tree[obj.hits[i].recipe.label].push(obj.hits[i].recipe.ingredients[j].food);
+//     }
+//   }
+//   console.log(food_tree);
+// }
+
+// var oReq = new XMLHttpRequest();
+// oReq.addEventListener("load", reqListener);
+// oReq.open("GET", "/url/chicken", true);
+// oReq.send();
+</script>
+</body>
+</html>
